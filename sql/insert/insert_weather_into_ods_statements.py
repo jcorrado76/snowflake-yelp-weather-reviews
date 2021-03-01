@@ -4,7 +4,7 @@ the staging tables into the ODS, after performing whatever ETL is required.
 
 INSERT_INTO_DATE_TABLE = """
 INSERT INTO "UDACITYPROJECT"."ODS"."WEATHER_DATES" (date)
-  SELECT distinct(date) 
+  SELECT distinct(date)
   FROM (SELECT DATE FROM "UDACITYPROJECT"."STAGING"."NY_PRECIPITATION"
         UNION
         SELECT DATE FROM "UDACITYPROJECT"."STAGING"."NY_TEMPERATURE") ORDER BY date;

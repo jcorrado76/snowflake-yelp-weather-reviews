@@ -5,6 +5,9 @@ external stage into staging data tables.
 list @UDACITY_WEATHER_S3_STAGE;
 // yelp stage contents
 list @UDACITY_YELP_S3_STAGE;
+
+This module assumes that I have an external stage configured, which is
+referenced by `udacity_weather_s3_stage`.
 """
 
 LOAD_TEMPERATURE = """
