@@ -124,6 +124,81 @@ SELECT
   json_rows:date::TIMESTAMP
 FROM "UDACITYPROJECT"."STAGING"."YELP_REVIEWS";
 """
+
+INSERT_YELP_BUSINESS_HOURS = """
+INSERT INTO "UDACITYPROJECT"."ODS"."YELP_BUSINESS_HOURS"(
+  BUSINESS_ID,
+  MONDAY_OPEN,
+  MONDAY_CLOSE,
+  TUESDAY_OPEN,
+  TUESDAY_CLOSE,
+  WEDNESDAY_OPEN,
+  WEDNESDAY_CLOSE,
+  THURSDAY_OPEN,
+  THURSDAY_CLOSE,
+  FRIDAY_OPEN,
+  FRIDAY_CLOSE,
+  SATURDAY_OPEN,
+  SATURDAY_CLOSE,
+  SUNDAY_OPEN,
+  SUNDAY_CLOSE
+)
+SELECT
+  json_rows:business_id,
+  SPLIT_PART(json_rows:hours:Monday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Monday, '-', 2)::TIME,
+  SPLIT_PART(json_rows:hours:Tuesday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Tuesday, '-', 2)::TIME,
+  SPLIT_PART(json_rows:hours:Wednesday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Wednesday, '-', 2)::TIME,
+  SPLIT_PART(json_rows:hours:Thursday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Thursday, '-', 2)::TIME,
+  SPLIT_PART(json_rows:hours:Friday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Friday, '-', 2)::TIME,
+  SPLIT_PART(json_rows:hours:Saturday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Saturday, '-', 2)::TIME,
+  SPLIT_PART(json_rows:hours:Sunday, '-', 1)::TIME,
+  SPLIT_PART(json_rows:hours:Sunday, '-', 2)::TIME
+FROM "UDACITYPROJECT"."STAGING"."YELP_BUSINESS";
+"""
+
+INSERT_YELP_BUSINESS_COVID_FEATURES = """
+INSERT INTO "UDACITYPROJECT"."ODS"."YELP_BUSINESS_COVID_FEATURES"(
+  BUSINESS_ID,
+  CALL_TO_ACTION_ENABLED,
+  COVID_BANNER,
+  GRUBHUB_ENABLED,
+  REQUEST_A_QUOTE_ENABLED,
+  TEMPORARY_CLOSED_UNTIL,
+  VIRTUAL_SERVICES_OFFERED,
+  DELIVERY_OR_TAKEOUT,
+  HIGHLIGHTS
+)
+SELECT
+  json_rows:business_id,
+  json_rows:"Call To Action enabled"::boolean,
+  CASE
+    WHEN json_rows:"Covid Banner" = 'FALSE' THEN NULL
+    ELSE json_rows:"Covid Banner"
+  END,
+  json_rows:"Grubhub enabled"::BOOLEAN,
+  json_rows:"Request a Quote Enabled"::BOOLEAN,
+  CASE
+    WHEN json_rows:"Temporary Closed Until" = 'FALSE' THEN NULL
+    ELSE json_rows:"Temporary Closed Until"::TIMESTAMP
+  END,
+  CASE
+    WHEN json_rows:"Virtual Services Offered" = 'FALSE' THEN NULL
+    ELSE json_rows:"Virtual Services Offered"
+  END,
+  json_rows:"delivery or takeout"::BOOLEAN,
+  CASE
+    WHEN json_rows:"highlights"::VARIANT = 'FALSE' THEN NULL
+    ELSE json_rows:"highlights"::VARIANT
+  END
+FROM "UDACITYPROJECT"."STAGING"."YELP_BUSINESS";
+"""
+
 YELP_ETL_QUERIES = [
         INSERT_BUSINESS_CATEGORIES,
         INSERT_YELP_BUSINESSES,
@@ -131,4 +206,7 @@ YELP_ETL_QUERIES = [
         INSERT_YELP_USER_FRIENDS,
         INSERT_YELP_TIPS,
         INSERT_YELP_CHECKINS,
+        INSERT_YELP_REVIEWS,
+        INSERT_YELP_BUSINESS_HOURS,
+        INSERT_YELP_BUSINESS_COVID_FEATURES
 ]
