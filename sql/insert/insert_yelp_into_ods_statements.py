@@ -176,7 +176,7 @@ INSERT INTO "UDACITYPROJECT"."ODS"."YELP_BUSINESS_COVID_FEATURES"(
 )
 SELECT
   json_rows:business_id,
-  json_rows:"Call To Action enabled"::boolean,
+  json_rows:"Call To Action enabled"::BOOLEAN,
   CASE
     WHEN json_rows:"Covid Banner" = 'FALSE' THEN NULL
     ELSE json_rows:"Covid Banner"
@@ -196,8 +196,57 @@ SELECT
     WHEN json_rows:"highlights"::VARIANT = 'FALSE' THEN NULL
     ELSE json_rows:"highlights"::VARIANT
   END
-FROM "UDACITYPROJECT"."STAGING"."YELP_BUSINESS";
+FROM "UDACITYPROJECT"."STAGING"."YELP_COVID_FEATURES";
 """
+
+INSERT_YELP_BUSINESS_COVID_FEATURES_HIGHLIGHTS = """
+// PARSE_JSON converts:
+// "[{\"identifier\":\"remote_services_during_covid_19\",\"params\":{},\"type\":\"covid\"},...]"
+// to:
+// [{"identifier": "remote_services_during_covid_19","params": {},"type": "covid"},...]
+// as a proper ARRAY object
+
+// LATERAL FLATTEN(ORIGINAL_HIGHLIGHTS_ROWS) converts:
+// [{"identifier": "remote_services_during_covid_19","params": {},"type": "covid"},...]
+// to:
+// {"identifier": "remote_services_during_covid_19",params": {},"type": "covid"}
+// and explodes each dictionary in the list into its own row
+// PATH and INDEX here are the index of this dictionary from the containing list
+// VALUE is the object - this dictionary
+
+// LATERAL FLATTEN(highlights_dictionaries.value, recursive=>TRUE, outer => true) converts:
+// {"identifier": "remote_services_during_covid_19",params": {"year":"44"},"type": "covid"}
+// to 
+// (identifier, "remote_services_during_covid_19"), (params, {"year":"44"}), (year, "44"), ("type": "covid")
+// note that you can drop any containing params as the key, as there are only two possibilities:
+// it's params: {}, where it's empty anyways, or it's params:{"year":"44"}, and we'll grab the 
+// year, "44" anyways because we've flattened it
+
+// there are actually duplicate entries in the covid feature dataset, with no way for me to distinguish between them
+// so, i'll take off the primary key constraint for this table
+INSERT INTO "UDACITYPROJECT"."ODS"."YELP_BUSINESS_COVID_FEATURES_HIGHLIGHTS"(
+  BUSINESS_ID,
+  HIGHLIGHT_KEY,
+  HIGHLIGHT_VALUE
+)
+SELECT 
+//  highlights_dictionaries.value as highlight_objs,
+//  highlights_fields.path as path_under_highlights,
+  business_id,
+  highlights_fields.key AS highlight_key,
+  highlights_fields.value AS highlight_value
+FROM
+  (SELECT parse_json(json_rows:highlights) AS original_highlights_row,
+          json_rows:business_id as business_id
+  FROM "UDACITYPROJECT"."STAGING"."YELP_COVID_FEATURES" as c) AS highlights,
+  lateral flatten(original_highlights_row) AS highlights_dictionaries,
+  lateral flatten(highlights_dictionaries.value, recursive=>TRUE, outer => true) as highlights_fields
+WHERE highlight_key <> 'params' AND
+      highlight_key IS NOT NULL;
+"""
+
+
+
 
 YELP_ETL_QUERIES = [
         INSERT_BUSINESS_CATEGORIES,
@@ -208,5 +257,6 @@ YELP_ETL_QUERIES = [
         INSERT_YELP_CHECKINS,
         INSERT_YELP_REVIEWS,
         INSERT_YELP_BUSINESS_HOURS,
-        INSERT_YELP_BUSINESS_COVID_FEATURES
+        INSERT_YELP_BUSINESS_COVID_FEATURES,
+        INSERT_YELP_BUSINESS_COVID_FEATURES_HIGHLIGHTS
 ]

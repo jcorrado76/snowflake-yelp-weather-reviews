@@ -133,6 +133,7 @@ CREATE OR REPLACE TABLE "UDACITYPROJECT"."ODS"."YELP_BUSINESS_HOURS" (
 COMMENT = "This table stores the business hours for all the businesses in the YELP dataset.";
 """
 
+# highlights is still variant and needs to be expanded
 CREATE_YELP_BUSINESS_COVID_FEATURES = """
 CREATE OR REPLACE TABLE "UDACITYPROJECT"."ODS"."YELP_BUSINESS_COVID_FEATURES" (
   BUSINESS_ID              STRING PRIMARY KEY,
